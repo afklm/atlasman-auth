@@ -27,16 +27,9 @@ apply plugin: 'nebula.provided-base'
 sourceSets {
     main.resources {
         srcDirs 'src/main/ext-resources', 'src/main/resources'
-//        include 'ext-resources/**'
-//        include 'resources/**'
-//        output '/'
     }
 }
 
-//jar {
-//    include 'src/main/ext-resources/**'
-//}
-//
 manifest {
     attributes 'Implementation-Title': 'Analytics Library', 'Implementation-Version': version
 }
