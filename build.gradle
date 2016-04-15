@@ -1,0 +1,163 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.3.3.RELEASE")
+        classpath("org.ajoberstar:gradle-git:1.4.2")
+    }
+}
+
+import org.ajoberstar.grgit.Grgit
+
+plugins {
+    id 'nebula.optional-base' version '3.0.3'
+    id 'nebula.provided-base' version '3.0.3'
+    id 'de.gliderpilot.semantic-release' version '1.0.0'
+}
+
+apply plugin: 'java'
+apply plugin: 'groovy'
+apply plugin: 'maven'
+apply plugin: 'idea'
+apply plugin: 'jacoco'
+apply plugin: 'spring-boot'
+apply plugin: 'nebula.provided-base'
+
+sourceSets {
+    main.resources {
+        srcDirs 'src/main/ext-resources', 'src/main/resources'
+//        include 'ext-resources/**'
+//        include 'resources/**'
+//        output '/'
+    }
+}
+
+//jar {
+//    include 'src/main/ext-resources/**'
+//}
+//
+manifest {
+    attributes 'Implementation-Title': 'Analytics Library', 'Implementation-Version': version
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url "http://maven.atlassian.com/content/groups/public"
+    }
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true
+        html.enabled = true
+    }
+}
+
+check.dependsOn jacocoTestReport
+
+tasks.withType(JavaCompile) {
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+}
+
+bootRun {
+    addResources = false
+    environment 'spring.profiles.active', 'default,development'
+}
+
+configurations {
+    all*.exclude group: 'commons-logging', module: 'commons-logging'
+    all*.exclude group: 'log4j', module: 'log4j'
+    all*.exclude group: 'commons-logging', module: 'commons-logging'
+}
+
+ext {
+    git = Grgit.open(dir: ".")
+    revision = git.head().abbreviatedId
+    springBootVersion = '1.3.3.RELEASE'
+    lombokVersion = '1.16.+'
+    spockVersion = '1.0-groovy-2.4'
+    groovyVersion = '2.4.+'
+    crowdVersion = '2.8.3'
+}
+
+version = "0.0.1.${revision}"
+
+dependencies {
+    //compile dependencies
+    compile("org.springframework.boot:spring-boot-starter-web:${springBootVersion}") {
+        exclude module: "spring-boot-starter-tomcat"
+    }
+    //use Jetty instead of default Tomcat
+    compile 'org.springframework.boot:spring-boot-starter-jetty'
+    compile 'org.springframework.boot:spring-boot-starter-actuator'
+    compile 'org.springframework.boot:spring-boot-starter-security'
+    compile 'org.springframework.security.oauth:spring-security-oauth2:2.0.9.RELEASE'
+    compile 'org.springframework.security:spring-security-jwt:1.0.4.RELEASE'
+    compile("com.atlassian.crowd:crowd-integration-client-rest:$crowdVersion") {
+        exclude module: "google-collections:com.google.collections"
+    }
+
+    //provided dependencies
+    provided "org.projectlombok:lombok:$lombokVersion"
+
+    //runtime dependencies
+    runtime 'org.yaml:snakeyaml:1.16'
+
+    //test dependencies
+    testCompile 'org.springframework.boot:spring-boot-starter-test'
+    testCompile "org.codehaus.groovy:groovy-all:$groovyVersion"
+    testCompile "org.spockframework:spock-core:$spockVersion"
+    testCompile "org.spockframework:spock-spring:$spockVersion"
+}
+
+task cloneConfiguration(type: ConfigurationTask)
+
+task copyConfiguration << {
+    if (!project.hasProperty("skipConfiguration")) {
+        copy {
+
+            if (!project.file("repos/config.git/atlasman-authorization-server").exists()) {
+                throw new GradleException("No external configuration found, make sure to include -Prepository, -Pusername and -Ppassword for the first time you build the project.")
+            }
+            logger.quiet("Copy files from \'repos/config.git/atlasman-authorization-server/**\' to \'src/main/ext-resources/**\'.")
+            from "repos/config.git/atlasman-authorization-server"
+            into "src/main/ext-resources"
+            logger.quiet("Files copied")
+        }
+    }
+}
+
+copyConfiguration.dependsOn cloneConfiguration
+compileJava.dependsOn copyConfiguration
+copyConfiguration.mustRunAfter cloneConfiguration
+compileJava.mustRunAfter copyConfiguration
+
+class ConfigurationTask extends DefaultTask {
+
+    @TaskAction
+    def cloneConfiguration() {
+        if (!project.hasProperty("skipConfiguration")) {
+            logger.quiet("Loading git repository.")
+            def repo = project.file("repos/config.git").exists() ?
+                    Grgit.open(dir: "repos/config.git",
+                            creds: [
+                                    username: project.property("username"),
+                                    password: project.property("password")
+                            ]) :
+                    Grgit.clone(dir: 'repos/config.git',
+                            uri: project.property("repository"),
+                            credentials: [
+                                    username: project.property("username"),
+                                    password: project.property("password")
+                            ])
+            //Pull any new changes
+            logger.quiet("Pulling any new changes from configuration repository.")
+            repo.pull(rebase: false)
+            logger.quiet("Configuration repository with revision [${repo.head().id}] is up to date.")
+        }
+    }
+
+}

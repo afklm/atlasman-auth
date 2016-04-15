@@ -1,0 +1,37 @@
+# Gradle generated files
+**/build
+.gradle
+gradle.properties
+repos/
+/MANIFEST.MF
+
+# Compiled files
+*.class
+
+# External properties
+src/main/ext-resources/
+
+# Packages
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+*.zip
+
+# Eclipse files
+*.classpath
+*.project
+*.settings
+.checkstyle
+
+# IntelliJ IDEA files
+.idea/
+*.iml
+*.log
+/.metadata
+/Servers
+
+# Frontend files
+/**/node_modules
+/**/.gulp-cache
+/**/jspm_packages
+/**/dist
+/devnet-core-ui/src/client/public
