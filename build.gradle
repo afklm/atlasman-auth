@@ -31,7 +31,7 @@ sourceSets {
 }
 
 manifest {
-    attributes 'Implementation-Title': 'Analytics Library', 'Implementation-Version': version
+    attributes 'Implementation-Title': 'Atlasman Authentication Server', 'Implementation-Version': version
 }
 
 repositories {

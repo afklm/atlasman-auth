@@ -19,9 +19,7 @@ To run the build there are two options.
 
 Option 1, provide the parameters manualy:
 
-`
-gradle build -Prepository={repository url} -Pusername={repo username} -Ppassword={repo password}
-`
+`gradle build -Prepository={repository url} -Pusername={repo username} -Ppassword={repo password}`
 
 Option 2, include a gradle.properties file which contains the project parameters:
 ```
