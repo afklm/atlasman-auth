@@ -24,6 +24,9 @@ public class CrowdUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return crowd.load(username).map(u -> {
+            if(!u.isActive()){
+                return null;
+            }
             List<SimpleGrantedAuthority> grantedAuthorities =
                     crowd.listGroups(username, false)
                             .map(g -> g.stream()
