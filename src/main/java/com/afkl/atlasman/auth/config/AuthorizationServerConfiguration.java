@@ -1,5 +1,8 @@
 package com.afkl.atlasman.auth.config;
 
+import com.afkl.atlasman.auth.crowd.Crowd;
+import com.afkl.atlasman.auth.crowd.CrowdUserDetailsService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,15 +31,17 @@ public class AuthorizationServerConfiguration extends AuthorizationServerConfigu
     private Environment environment;
 
     @Autowired
+    private Crowd crowd;
+    @Autowired
     private AuthenticationManager authenticationManager;
 
     @Bean
-    public TokenStore tokenStore() {
-        return new JwtTokenStore(null);
+    public TokenStore tokenStore() throws Exception {
+        return new JwtTokenStore(jwtAccessTokenConverter());
     }
 
     @Bean
-    public JwtAccessTokenConverter jwtAccessTokenConverter() {
+    public JwtAccessTokenConverter jwtAccessTokenConverter() throws Exception {
         KeyStoreKeyFactory keyStoreKeyFactory = new KeyStoreKeyFactory(new ClassPathResource(environment.getRequiredProperty("oauth2.keystore.classpath")), environment.getRequiredProperty("oauth2.keystore.storePass").toCharArray());
         JwtAccessTokenConverter converter = new JwtAccessTokenConverter();
         converter.setKeyPair(keyStoreKeyFactory.getKeyPair(environment.getRequiredProperty("oauth2.keystore.alias")));
@@ -50,7 +55,11 @@ public class AuthorizationServerConfiguration extends AuthorizationServerConfigu
 
     @Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
-        endpoints.tokenStore(tokenStore()).tokenEnhancer(jwtAccessTokenConverter()).authenticationManager(authenticationManager);
+        endpoints
+                .tokenStore(tokenStore())
+                .tokenEnhancer(jwtAccessTokenConverter())
+                .authenticationManager(authenticationManager)
+        .userDetailsService(new CrowdUserDetailsService(crowd));
     }
 
     @Override

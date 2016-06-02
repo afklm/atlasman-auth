@@ -12,7 +12,6 @@ import com.atlassian.crowd.service.client.CrowdClient;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpServerErrorException;
 
 import java.util.List;
@@ -52,6 +51,19 @@ public class Crowd {
             }
         }
         return Optional.empty();
+    }
+
+    public Optional<User> load(String username) {
+        try {
+            return Optional.of(crowdClient.getUser(username));
+        } catch (UserNotFoundException e) {
+            return Optional.empty();
+        } catch (OperationFailedException e) {
+            log.warn("Unable to authenticate user due to unknown exception.", e);
+            throw new HttpServerErrorException(SERVICE_UNAVAILABLE, "Unable to authenticate user due to unknown exception.");
+        } catch (InvalidAuthenticationException | ApplicationPermissionException e) {
+            throw new HttpServerErrorException(UNAUTHORIZED, "Unable to authenticate with provided credentials.");
+        }
     }
 
     public Optional<User> authenticate(String username, String secret) {
