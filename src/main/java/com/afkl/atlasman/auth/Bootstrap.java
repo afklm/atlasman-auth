@@ -6,8 +6,10 @@ import com.afkl.atlasman.auth.crowd.CrowdClientConfiguration;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 
 /**
  * TODO add docs and tests...
@@ -15,6 +17,7 @@ import org.springframework.context.annotation.Import;
 @Import({CrowdClientConfiguration.class, WebSecurityConfiguration.class, AuthorizationServerConfiguration.class})
 @Configuration
 @EnableAutoConfiguration
+@ComponentScan("com.afkl.atlasman.auth.me")
 public class Bootstrap {
 
     public static void main(String[] args) {
